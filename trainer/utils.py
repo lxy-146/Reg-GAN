@@ -31,7 +31,8 @@ class Resize():
 class ToTensor():
     def __call__(self, tensor):
         tensor = np.expand_dims(tensor, 0)
-        return torch.from_numpy(tensor)
+        tensor = torch.from_numpy(tensor)
+        return tensor
 
 def tensor2image(tensor):
     image = (127.5*(tensor.cpu().float().numpy()))+127.5
@@ -47,7 +48,7 @@ def tensor2image(tensor):
 
 class Logger():
     def __init__(self, env_name ,ports, n_epochs, batches_epoch):
-        self.viz = Visdom(port= ports,env = env_name)
+        # self.viz = Visdom(port= ports,env = env_name)
         self.n_epochs = n_epochs
         self.batches_epoch = batches_epoch
         self.epoch = 1
@@ -81,25 +82,25 @@ class Logger():
         sys.stdout.write('ETA: %s' % (datetime.timedelta(seconds=batches_left * self.mean_period / batches_done)))
 
         # Draw images
-        for image_name, tensor in images.items():
-            if image_name not in self.image_windows:
-                self.image_windows[image_name] = self.viz.image(tensor2image(tensor.data), opts={'title': image_name})
-            else:
-                self.viz.image(tensor2image(tensor.data), win=self.image_windows[image_name],
-                               opts={'title': image_name})
+        # for image_name, tensor in images.items():
+        #     if image_name not in self.image_windows:
+        #         self.image_windows[image_name] = self.viz.image(tensor2image(tensor.data), opts={'title': image_name})
+        #     else:
+        #         self.viz.image(tensor2image(tensor.data), win=self.image_windows[image_name],
+        #                        opts={'title': image_name})
 
         # End of epoch
         if (self.batch % self.batches_epoch) == 0:
             # Plot losses
             for loss_name, loss in self.losses.items():
-                if loss_name not in self.loss_windows:
-                    self.loss_windows[loss_name] = self.viz.line(X=np.array([self.epoch]),
-                                                                 Y=np.array([loss / self.batch]),
-                                                                 opts={'xlabel': 'epochs', 'ylabel': loss_name,
-                                                                       'title': loss_name})
-                else:
-                    self.viz.line(X=np.array([self.epoch]), Y=np.array([loss / self.batch]),
-                                  win=self.loss_windows[loss_name], update='append')
+                # if loss_name not in self.loss_windows:
+                #     self.loss_windows[loss_name] = self.viz.line(X=np.array([self.epoch]),
+                #                                                  Y=np.array([loss / self.batch]),
+                #                                                  opts={'xlabel': 'epochs', 'ylabel': loss_name,
+                #                                                        'title': loss_name})
+                # else:
+                #     self.viz.line(X=np.array([self.epoch]), Y=np.array([loss / self.batch]),
+                #                   win=self.loss_windows[loss_name], update='append')
                 # Reset losses for next epoch
                 self.losses[loss_name] = 0.0
 

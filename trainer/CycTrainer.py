@@ -16,8 +16,10 @@ from .reg import Reg
 from torchvision.transforms import RandomAffine,ToPILImage
 from .transformer import Transformer_2D
 from skimage import measure
+from skimage.metrics import structural_similarity
 import numpy as np
 import cv2
+from PIL import Image
 
 class Cyc_Trainer():
     def __init__(self, config):
@@ -60,22 +62,26 @@ class Cyc_Trainer():
         level = config['noise_level']  # set noise level
         
         transforms_1 = [ToPILImage(),
-                   RandomAffine(degrees=level,translate=[0.02*level, 0.02*level],scale=[1-0.02*level, 1+0.02*level],fillcolor=-1),
-                   ToTensor(),
+                   # RandomAffine(degrees=level,translate=[0.02*level, 0.02*level],scale=[1-0.02*level, 1+0.02*level],fillcolor=-1),
+                   transforms.RandomHorizontalFlip(),
+                   # transforms.TrivialAugmentWide(),
+                   transforms.ToTensor(),
                    Resize(size_tuple = (config['size'], config['size']))]
     
         transforms_2 = [ToPILImage(),
-                   RandomAffine(degrees=1,translate=[0.02, 0.02],scale=[0.98, 1.02],fillcolor=-1),
-                   ToTensor(),
-                   Resize(size_tuple = (config['size'], config['size']))]
+                   # RandomAffine(degrees=1,translate=[0.02, 0.02],scale=[0.98, 1.02],fillcolor=-1),
+                        transforms.RandomHorizontalFlip(),
+                   # transforms.TrivialAugmentWide(),
+                       transforms.ToTensor(),
+                       Resize(size_tuple = (config['size'], config['size']))]
 
-        self.dataloader = DataLoader(ImageDataset(config['dataroot'], level, transforms_1=transforms_1, transforms_2=transforms_2, unaligned=False,),
+        self.dataloader = DataLoader(ImageDataset(config['dataroot'], level, transforms_1=transforms_1, transforms_2=transforms_2, unaligned=True,),
                                 batch_size=config['batchSize'], shuffle=True, num_workers=config['n_cpu'])
 
         val_transforms = [ToTensor(),
                           Resize(size_tuple = (config['size'], config['size']))]
         
-        self.val_data = DataLoader(ValDataset(config['val_dataroot'], transforms_ =val_transforms, unaligned=False),
+        self.val_data = DataLoader(ValDataset('./data/test', transforms_ =val_transforms, unaligned=False),
                                 batch_size=config['batchSize'], shuffle=False, num_workers=config['n_cpu'])
 
  
@@ -284,23 +290,25 @@ class Cyc_Trainer():
             
             
             #############val###############
-            with torch.no_grad():
-                MAE = 0
-                num = 0
-                for i, batch in enumerate(self.val_data):
-                    real_A = Variable(self.input_A.copy_(batch['A']))
-                    real_B = Variable(self.input_B.copy_(batch['B'])).detach().cpu().numpy().squeeze()
-                    fake_B = self.netG_A2B(real_A).detach().cpu().numpy().squeeze()
-                    mae = self.MAE(fake_B,real_B)
-                    MAE += mae
-                    num += 1
-
-                print ('Val MAE:',MAE/num)
+            # with torch.no_grad():
+            #     MAE = 0
+            #     num = 0
+            #     for i, batch in enumerate(self.val_data):
+            #         real_A = Variable(self.input_A.copy_(batch['A']))
+            #         real_B = Variable(self.input_B.copy_(batch['B'])).detach().cpu().numpy().squeeze()
+            #         fake_B = self.netG_A2B(real_A).detach().cpu().numpy().squeeze()
+            #         mae = self.MAE(fake_B,real_B)
+            #         MAE += mae
+            #         num += 1
+            #
+            #     print ('Val MAE:',MAE/num)
                 
                     
                          
     def test(self,):
         self.netG_A2B.load_state_dict(torch.load(self.config['save_root'] + 'netG_A2B.pth'))
+        if not os.path.exists(os.path.join(self.config['save_root'], 'generate')):
+            os.mkdir(os.path.join(self.config['save_root'], 'generate'))
         #self.R_A.load_state_dict(torch.load(self.config['save_root'] + 'Regist.pth'))
         with torch.no_grad():
                 MAE = 0
@@ -309,20 +317,21 @@ class Cyc_Trainer():
                 num = 0
                 for i, batch in enumerate(self.val_data):
                     real_A = Variable(self.input_A.copy_(batch['A']))
-                    real_B = Variable(self.input_B.copy_(batch['B'])).detach().cpu().numpy().squeeze()
+                    # real_B = Variable(self.input_B.copy_(batch['B'])).detach().cpu().numpy().squeeze()
                     
                     fake_B = self.netG_A2B(real_A)
-                    fake_B = fake_B.detach().cpu().numpy().squeeze()                                                 
-                    mae = self.MAE(fake_B,real_B)
-                    psnr = self.PSNR(fake_B,real_B)
-                    ssim = measure.compare_ssim(fake_B,real_B)
-                    MAE += mae
-                    PSNR += psnr
-                    SSIM += ssim 
-                    num += 1
-                print ('MAE:',MAE/num)
-                print ('PSNR:',PSNR/num)
-                print ('SSIM:',SSIM/num)
+                    fake_B = fake_B.detach().cpu().numpy().squeeze()
+                    fake_B = ((fake_B + 1) / 2.0 * 255.0).astype(np.uint8)
+                    fake_B = Image.fromarray(fake_B)
+                    fake_B = fake_B.convert('L')
+                    fake_B.save(os.path.join(self.config['save_root'], 'generate', batch['filename'][0] + '.png'))
+                #     mae = self.MAE(fake_B,real_B)
+                #     psnr = self.PSNR(fake_B,real_B)
+                #     MAE += mae
+                #     PSNR += psnr
+                #     num += 1
+                # print ('MAE:',MAE/num)
+                # print ('PSNR:',PSNR/num)
     
     def PSNR(self,fake,real):
        x,y = np.where(real!= -1)# Exclude background

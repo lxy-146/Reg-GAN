@@ -20,8 +20,8 @@ Recon_kl_lamda: 0.01
 epoch: 0        # starting epoch
 n_epochs: 80       # How often do you want to display output images during training
 batchSize: 1               # size of the batches
-dataroot:  '/data1/T1T2/train2D/'      # root directory of the dataset
-val_dataroot:  '/data1/T1T2/val2D/'
+dataroot:  '/data/train/'      # root directory of the dataset
+val_dataroot:  '/data/val/'
 lr: 0.0001                   # initial learning rate
 decay_epoch: 20            # epoch to start linearly decaying the learning rate to 0
 size: 256                # size of the data crop
@@ -29,6 +29,7 @@ input_nc: 1
 output_nc: 1                  
 cuda: True                
 n_cpu: 1
+gpu: 1
 
 # Unit
 gen:

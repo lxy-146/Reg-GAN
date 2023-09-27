@@ -1,8 +1,8 @@
 #####
-name: NiceGAN
+name: Nice
 bidirect: False #Unidirectional or bidirectional
 regist: False
-noise_level: 1  #  noise level
+noise_level: 0  #  noise level
 port: 6019   #  port parameters
 save_root: './output/Nice/NC+R/'
 image_save: './output/Nice/NC+R/img/'
@@ -14,10 +14,10 @@ Smooth_lamda: 10
 
 
 epoch: 0        # starting epoch
-n_epochs: 80       # How often do you want to display output images during training
+n_epochs: 150       # How often do you want to display output images during training
 batchSize: 1               # size of the batches
-dataroot: '/data1/T1T2/train2D/'     # root directory of the dataset
-val_dataroot: '/data1/T1T2/val2D/'
+dataroot: './data/train'     # root directory of the dataset
+val_dataroot: './data/val'
 lr: 0.0001                   # initial learning rate
 decay_epoch: 20            # epoch to start linearly decaying the learning rate to 0
 size: 256                # size of the data crop
@@ -25,4 +25,5 @@ input_nc: 1
 output_nc: 1                  
 cuda: True                
 n_cpu: 0
+gpu: 0
 
